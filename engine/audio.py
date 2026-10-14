@@ -92,10 +92,22 @@ def duration(a: np.ndarray) -> float:
     return a.shape[1] / SR
 
 
-def export(a: np.ndarray, fmt: str = "wav") -> bytes:
-    """Exporte en bytes 'wav' (16 bits) ou 'mp3' (192 kbit/s)."""
+def peaks(a: np.ndarray, bins: int = 240) -> list[float]:
+    """Enveloppe (0-1) pour dessiner la forme d'onde."""
+    m = np.abs(a).max(axis=0)
+    hop = max(1, m.size // bins)
+    m = np.pad(m, (0, max(0, hop * bins - m.size)))[: hop * bins]
+    p = m.reshape(bins, hop).max(axis=1)
+    return (p / (p.max() + 1e-9)).round(3).tolist()
+
+
+def export(a: np.ndarray, fmt: str = "wav", bit_depth: int = 24) -> bytes:
+    """Exporte en bytes : 'wav' (16/24 bits) ou 'mp3' (haute qualité)."""
     a = np.ascontiguousarray(np.clip(a, -1.0, 1.0), dtype=np.float32)
-    options = [{"quality": "192k"}, {}] if fmt == "mp3" else [{}]
+    if fmt == "mp3":
+        options = [{"quality": "320k"}, {"quality": "192k"}, {}]
+    else:
+        options = [{"bit_depth": int(bit_depth)}, {}]
     last_err: Exception | None = None
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, f"out.{fmt}")
