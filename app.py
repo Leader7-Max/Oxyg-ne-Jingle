@@ -11,8 +11,9 @@ st.set_page_config(page_title=APP_NAME, page_icon=APP_ICON, layout="wide")
 import theme  # noqa: E402  (après set_page_config)
 
 PAGES = {
-    "🎙️ Studio jingle": "views.studio",
+    "🎙️ Studio": "views.studio",
     "🎚️ Labo voix": "views.voice_lab",
+    "🥁 Sons & nappes": "views.sounds",
     "📚 Bibliothèque": "views.library",
 }
 
