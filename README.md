@@ -1,36 +1,32 @@
-# 🫧 Oxygène Jingle
+# 🫧 Oxygène Jingle — v2
 
-Studio de jingles et de voix off pour DJs — gratuit, sans clé API.
+Studio de jingles et de voix off pour DJs : gratuit, sans clé API.
 
 ## Lancer
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
-Déploiement : pousse le dossier sur GitHub puis Streamlit Community Cloud (fichier principal : `app.py`).
 
-## Structure
-| Fichier | Rôle |
-|---|---|
-| `app.py` | Routeur minimal (navigation + chargement de la page active) |
-| `theme.py` | Couleurs, CSS, en-têtes |
-| `config.py` | Nom de l'app, catalogue des voix |
-| `engine/tts.py` | Voix neurales gratuites (edge-tts), scripts multi-voix |
-| `engine/fx.py` | Effets voix : gain, écho, reverb, EQ, compresseur, pitch… + presets |
-| `engine/sfx.py` | Effets DJ synthétisés (impact, riser, whoosh, laser, bips) |
-| `engine/mixer.py` | Mixage voix + musique avec ducking |
-| `engine/audio.py` / `store.py` | Utilitaires audio, export WAV/MP3, bibliothèque de session |
-| `views/` | Pages : `studio`, `voice_lab`, `library`, composants partagés |
+## Arborescence (tout à la racine du dépôt)
+```
+app.py            routeur minimal
+theme.py          thème « studio néon », hero, chips, forme d'onde
+config.py         nom de l'app + catalogue de 26 voix
+requirements.txt
+.streamlit/config.toml
+engine/           audio.py tts.py fx.py layers.py voices.py synth.py sfx.py beds.py mixer.py master.py store.py (+ __init__.py)
+views/            studio.py voice_lab.py sounds.py library.py components.py (+ __init__.py)
+```
 
-## Script multi-voix
-```
-Salut les noctambules !
-B: Oxygène Jingle, c'est parti !
-[pause 1]
-Restez avec nous.
-```
-Les lignes `B:` utilisent la voix B ; `[pause 1]` insère 1 s de silence.
+## Ce que fait le Studio
+- **Casting** : voix principale, voix 2 (dialogue) et voix de fond (chœur, chuchotement, nappe vocale).
+- **Épaisseur** : double voix, double + octave grave, chœur 3 voix.
+- **Son studio** : presets « Studio Pro », « Trailer », « Annonceur FM »… (EQ, de-esser, compression, saturation douce, reverb de pièce).
+- **Nappes générées** : House, Hip-Hop, Techno, Pop, Lo-fi, Cinématique (rythmique, basse, accords, side-chain).
+- **Effets DJ** : scratch, sirènes, airhorn, tape stop, rewind, risers, impacts…
+- **Mastering** : cible LUFS (-16 / -14 / -11), plafond crête, export WAV 24-bit, MP3, stems ZIP.
 
 ## Notes
-- La synthèse vocale demande une connexion internet (service vocal gratuit de Microsoft Edge via `edge-tts`, non officiel) : vérifie les conditions d'usage avant un usage commercial.
-- Import de fichiers : wav, mp3, flac, ogg.
+- La synthèse vocale utilise le service gratuit de Microsoft Edge (`edge-tts`) : connexion internet requise, service non officiel — vérifie les conditions avant un usage commercial.
+- Une voix de synthèse reste une voix de synthèse : pour un rendu 100 % « humain », enregistre ta voix et passe-la dans le **Labo voix**.
