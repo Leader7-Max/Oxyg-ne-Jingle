@@ -1,13 +1,17 @@
-"""Page Labo voix : nettoie et met en forme une voix enregistrée ou importée."""
+"""Page Labo voix : traite une voix enregistrée (micro ou fichier) comme en studio."""
 import streamlit as st
 
 import theme
-from engine import audio, fx, store
+from engine import audio, fx, master, store
 from views.components import fx_panel, player
+
+TARGETS = {"Crête seulement": None, "-16 LUFS · vidéo / podcast": -16.0,
+           "-14 LUFS · streaming / radio": -14.0, "-11 LUFS · club / festival": -11.0}
 
 
 def render() -> None:
-    theme.header("Labo voix", "Importe ou enregistre une voix, puis nettoie-la et donne-lui du caractère.")
+    theme.header("Labo voix", "Importe ou enregistre une voix, nettoie-la et donne-lui un son de studio.",
+                 ["De-esser", "Compression", "EQ", "LUFS"])
 
     src = st.radio("Source", ["Importer un fichier", "Micro"], horizontal=True)
     data = None
@@ -19,7 +23,6 @@ def render() -> None:
         data = rec.getvalue() if rec else None
     else:
         st.info("Mets à jour Streamlit pour utiliser le micro, ou importe un fichier.")
-
     if not data:
         return
 
@@ -32,26 +35,21 @@ def render() -> None:
     st.caption("Original")
     st.audio(data)
 
-    theme.section("Traitement")
-    params = fx_panel("lab", "Nettoyage voix")
+    theme.section("Traitement", 1)
+    params = fx_panel("lab", "Studio Pro — voix off")
     c1, c2 = st.columns(2)
     trim = c1.checkbox("Couper les silences début/fin", value=True)
-    peak = c2.slider("Niveau crête final (dB)", -6.0, 0.0, -1.0, 0.5)
+    target = TARGETS[c2.selectbox("Loudness", list(TARGETS), index=2)]
 
     with st.spinner("Traitement…"):
         out = fx.process(voice, params)
         if trim:
             out = audio.trim_silence(out)
-        out = audio.normalize(out, peak)
-        item = {"id": "lab", "name": "voix-traitee", "seconds": audio.duration(out),
-                "wav": audio.export(out, "wav"), "mp3": None}
-        try:
-            item["mp3"] = audio.export(out, "mp3")
-        except Exception:  # noqa: BLE001
-            pass
+        out = master.master(out, target, -1.0, glue=False, air=False) if target else audio.normalize(out, -1.0)
+        item = store.make_item("voix-traitee", out)
 
-    theme.section(f"Résultat · {item['seconds']:.1f} s")
+    theme.section(f"Résultat · {item['seconds']:.1f} s", 2)
     player(item, "lab")
     if st.button("📚 Ajouter à la bibliothèque", use_container_width=True):
-        store.add("voix-traitee", out)
+        store.push(item)
         st.toast("Ajouté à la bibliothèque")
