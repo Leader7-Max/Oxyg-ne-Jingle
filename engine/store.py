@@ -1,33 +1,60 @@
-"""Bibliothèque de session : garde les créations pour les réécouter / télécharger."""
+"""Bibliothèque de session : créations, statistiques de loudness, export des stems."""
 from __future__ import annotations
 
+import io
 import re
 import time
 import uuid
+import zipfile
 
+import numpy as np
 import streamlit as st
 
-from engine import audio
+from engine import audio, master
 
-KEY, MAX_ITEMS = "library", 15
+KEY, MAX_ITEMS = "library", 10
 
 
 def items() -> list[dict]:
     return st.session_state.setdefault(KEY, [])
 
 
-def add(name: str, a) -> dict:
+def _zip_stems(final: np.ndarray, stems: dict) -> bytes:
+    peak = max((float(np.abs(v).max()) for v in stems.values()), default=1.0)
+    scale = min(1.0, 0.98 / peak) if peak > 0 else 1.0
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("mix_final.wav", audio.export(final, "wav", 24))
+        for name, v in stems.items():
+            if np.abs(v).max() > 1e-6:
+                z.writestr(f"stem_{name}.wav", audio.export(v * scale, "wav", 16))
+    return buf.getvalue()
+
+
+def make_item(name: str, a: np.ndarray, stems: dict | None = None) -> dict:
     slug = re.sub(r"[^\w\-]+", "-", name.strip().lower()).strip("-") or "jingle"
     try:
         mp3 = audio.export(a, "mp3")
     except Exception:  # noqa: BLE001
         mp3 = None
-    item = {"id": uuid.uuid4().hex[:8], "name": slug, "ts": time.strftime("%H:%M"),
-            "seconds": audio.duration(a), "wav": audio.export(a, "wav"), "mp3": mp3}
+    stats = master.measure(a)
+    return {"id": uuid.uuid4().hex[:8], "name": slug, "ts": time.strftime("%H:%M"),
+            "seconds": audio.duration(a), "lufs": stats["lufs"], "peak": stats["peak"],
+            "peaks": audio.peaks(a), "wav": audio.export(a, "wav", 24), "mp3": mp3,
+            "stems": _zip_stems(a, stems) if stems else None}
+
+
+def push(item: dict) -> dict:
     lib = items()
     lib.insert(0, item)
+    for old in lib[1:]:      # les stems pèsent lourd : on ne garde que ceux du dernier projet
+        old["stems"] = None
     del lib[MAX_ITEMS:]
     return item
+
+
+def add(name: str, a: np.ndarray, stems: dict | None = None) -> dict:
+    return push(make_item(name, a, stems))
 
 
 def remove(item_id: str) -> None:
