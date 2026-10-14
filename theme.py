@@ -1,4 +1,6 @@
 """Thème Oxygène v2 : identité « studio néon » + composants (hero, sections, chips, waveform)."""
+from __future__ import annotations
+
 import html
 
 import streamlit as st
@@ -116,7 +118,8 @@ def chips(items) -> None:
     st.markdown(f'<div class="oxy-chips">{body}</div>', unsafe_allow_html=True)
 
 
-def waveform(peaks, height: int = 84) -> None:
+def waveform(peaks, height: int = 84, selection=None) -> None:
+    """Forme d'onde SVG ; selection = (début, fin) en fractions 0-1 pour surligner une zone."""
     n, W = len(peaks), 600
     if n == 0:
         return
@@ -125,13 +128,40 @@ def waveform(peaks, height: int = 84) -> None:
         f"M{i * step + step / 2:.1f},{cy - max(1.5, p * cy * 0.92):.1f}V{cy + max(1.5, p * cy * 0.92):.1f}"
         for i, p in enumerate(peaks)
     )
+    sel = ""
+    if selection:
+        a, b = max(0.0, min(1.0, selection[0])), max(0.0, min(1.0, selection[1]))
+        sel = (f'<rect x="{a * W:.1f}" y="0" width="{max(2.0, (b - a) * W):.1f}" height="{height}" '
+               'fill="rgba(244,114,182,.28)" stroke="#F472B6" stroke-width="1" '
+               'vector-effect="non-scaling-stroke"/>')
     svg = (
         f'<svg viewBox="0 0 {W} {height}" preserveAspectRatio="none" style="width:100%;height:{height}px">'
         '<defs><linearGradient id="og" x1="0" x2="1"><stop offset="0" stop-color="#22D3EE"/>'
         '<stop offset=".55" stop-color="#7C83FF"/><stop offset="1" stop-color="#F472B6"/></linearGradient></defs>'
-        f'<path d="{d}" stroke="url(#og)" stroke-width="{step * 0.62:.2f}" stroke-linecap="round" fill="none"/></svg>'
+        f'{sel}<path d="{d}" stroke="url(#og)" stroke-width="{step * 0.62:.2f}" stroke-linecap="round" fill="none"/></svg>'
     )
     st.markdown(f'<div class="oxy-wave">{svg}</div>', unsafe_allow_html=True)
+
+
+_TL_COLORS = {"voice": "#22D3EE", "bg": "#7C83FF", "sfx": "#F472B6", "echo": "#FBBF24", "music": "#34D399"}
+
+
+def timeline(rows, total: float) -> None:
+    """Vue d'ensemble du projet : une ligne par voix / effet / écho / musique."""
+    if not rows or total <= 0:
+        return
+    W, rh, gap = 600, 22, 4
+    H = len(rows) * (rh + gap) + gap
+    parts = []
+    for r, (label, s, e, kind) in enumerate(rows):
+        x, w = s / total * W, max(4.0, (e - s) / total * W)
+        y = r * (rh + gap) + gap
+        parts.append(f'<rect x="{x:.1f}" y="{y}" width="{w:.1f}" height="{rh}" rx="6" '
+                     f'fill="{_TL_COLORS.get(kind, "#8EA0BC")}" opacity=".88"/>'
+                     f'<text x="{x + 7:.1f}" y="{y + 15}" font-size="11" font-weight="600" fill="#04101c">'
+                     f'{html.escape(str(label))}</text>')
+    st.markdown(f'<div class="oxy-wave"><svg viewBox="0 0 {W} {H}" style="width:100%">{"".join(parts)}</svg></div>',
+                unsafe_allow_html=True)
 
 
 def brand() -> None:
