@@ -1,0 +1,5 @@
+streamlit>=1.39
+edge-tts>=6.1.12
+pedalboard>=0.9.9
+numpy
+scipy
