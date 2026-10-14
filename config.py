@@ -33,3 +33,11 @@ VOICES = {
     "🇧🇷 Antônio — homme": "pt-BR-AntonioNeural",
     "🇧🇷 Francisca — femme": "pt-BR-FranciscaNeural",
 }
+
+# Cibles de loudness pour le mastering final
+TARGETS = {
+    "Radio / web (−16 LUFS)": -16.0,
+    "Streaming / club (−14 LUFS)": -14.0,
+    "Punchy DJ (−11 LUFS)": -11.0,
+    "Broadcast EBU R128 (−23 LUFS)": -23.0,
+}
