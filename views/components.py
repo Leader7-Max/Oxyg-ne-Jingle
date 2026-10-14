@@ -1,12 +1,13 @@
-"""Composants d'interface partagés : panneau d'effets et lecteur de résultat."""
+"""Composants partagés : panneau d'effets complet et lecteur de résultat."""
 import streamlit as st
 
+import theme
 from engine.fx import DEFAULTS, PRESETS
 
 
 def fx_panel(prefix: str, default: str = "Naturel") -> dict:
     names = list(PRESETS)
-    preset = st.selectbox("Preset d'effets", names, index=names.index(default),
+    preset = st.selectbox("Preset d'effets", names, index=names.index(default) if default in names else 0,
                           key=f"{prefix}_preset")
     base = {**DEFAULTS, **PRESETS[preset]}
 
@@ -25,11 +26,13 @@ def fx_panel(prefix: str, default: str = "Naturel") -> dict:
     with t2:
         p["hp_hz"] = st.slider("Coupe-bas (Hz)", 20, 1000, int(base["hp_hz"]), 10, key=k("hp"))
         p["lp_hz"] = st.slider("Coupe-haut (Hz)", 2000, 20000, int(base["lp_hz"]), 500, key=k("lp"))
-        p["low_db"] = st.slider("Graves (dB)", -12.0, 12.0, float(base["low_db"]), 0.5, key=k("lo"))
-        p["mid_db"] = st.slider("Présence (dB)", -12.0, 12.0, float(base["mid_db"]), 0.5, key=k("mi"))
-        p["high_db"] = st.slider("Aigus (dB)", -12.0, 12.0, float(base["high_db"]), 0.5, key=k("hi"))
+        p["low_db"] = st.slider("Chaleur 150 Hz (dB)", -12.0, 12.0, float(base["low_db"]), 0.5, key=k("lo"))
+        p["mud_db"] = st.slider("Boue 320 Hz (dB)", -12.0, 12.0, float(base["mud_db"]), 0.5, key=k("mu"))
+        p["mid_db"] = st.slider("Présence 3,5 kHz (dB)", -12.0, 12.0, float(base["mid_db"]), 0.5, key=k("mi"))
+        p["high_db"] = st.slider("Air 9 kHz (dB)", -12.0, 12.0, float(base["high_db"]), 0.5, key=k("hi"))
         p["pitch_st"] = st.slider("Hauteur (demi-tons)", -12.0, 12.0, float(base["pitch_st"]), 0.5, key=k("pi"))
     with t3:
+        p["deess"] = st.slider("De-esser (sifflantes)", 0.0, 1.0, float(base["deess"]), 0.05, key=k("de"))
         p["comp_thr"] = st.slider("Compresseur — seuil (dB, 0 = off)", -40.0, 0.0, float(base["comp_thr"]), 1.0, key=k("ct"))
         p["comp_ratio"] = st.slider("Compresseur — ratio", 1.0, 10.0, float(base["comp_ratio"]), 0.5, key=k("cr"))
         p["gate_db"] = st.slider("Gate anti-bruit (dB, -80 = off)", -80.0, -20.0, float(base["gate_db"]), 1.0, key=k("ga"))
@@ -40,11 +43,21 @@ def fx_panel(prefix: str, default: str = "Naturel") -> dict:
     return p
 
 
+def _num(v: float, unit: str) -> str:
+    return f"{v:.1f} {unit}" if v > -90 else f"— {unit}"
+
+
 def player(item: dict, key: str) -> None:
+    theme.chips([("⏱", f"{item['seconds']:.1f} s"), ("🔊", _num(item["lufs"], "LUFS")),
+                 ("📈", _num(item["peak"], "dBFS"))])
+    theme.waveform(item["peaks"])
     st.audio(item["wav"], format="audio/wav")
-    c1, c2 = st.columns(2)
-    c1.download_button("⬇️ WAV (qualité studio)", item["wav"], file_name=f"{item['name']}.wav",
-                       mime="audio/wav", key=f"{key}_wav", use_container_width=True)
-    c2.download_button("⬇️ MP3 192 kbit/s", item["mp3"] or b"", file_name=f"{item['name']}.mp3",
-                       mime="audio/mpeg", key=f"{key}_mp3", use_container_width=True,
-                       disabled=item["mp3"] is None)
+    cols = st.columns(3 if item.get("stems") else 2)
+    cols[0].download_button("⬇️ WAV 24-bit", item["wav"], file_name=f"{item['name']}.wav",
+                            mime="audio/wav", key=f"{key}_wav", use_container_width=True)
+    cols[1].download_button("⬇️ MP3 HQ", item["mp3"] or b"", file_name=f"{item['name']}.mp3",
+                            mime="audio/mpeg", key=f"{key}_mp3", use_container_width=True,
+                            disabled=item["mp3"] is None)
+    if item.get("stems"):
+        cols[2].download_button("📦 Stems (ZIP)", item["stems"], file_name=f"{item['name']}-stems.zip",
+                                mime="application/zip", key=f"{key}_zip", use_container_width=True)
