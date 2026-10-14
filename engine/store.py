@@ -12,7 +12,7 @@ import streamlit as st
 
 from engine import audio, master
 
-KEY, MAX_ITEMS = "library", 10
+KEY, CLIPS, MAX_ITEMS, MAX_CLIPS = "library", "clips", 10, 8
 
 
 def items() -> list[dict]:
@@ -31,7 +31,7 @@ def _zip_stems(final: np.ndarray, stems: dict) -> bytes:
     return buf.getvalue()
 
 
-def make_item(name: str, a: np.ndarray, stems: dict | None = None) -> dict:
+def make_item(name: str, a: np.ndarray, stems: dict | None = None, layout=None) -> dict:
     slug = re.sub(r"[^\w\-]+", "-", name.strip().lower()).strip("-") or "jingle"
     try:
         mp3 = audio.export(a, "mp3")
@@ -41,7 +41,7 @@ def make_item(name: str, a: np.ndarray, stems: dict | None = None) -> dict:
     return {"id": uuid.uuid4().hex[:8], "name": slug, "ts": time.strftime("%H:%M"),
             "seconds": audio.duration(a), "lufs": stats["lufs"], "peak": stats["peak"],
             "peaks": audio.peaks(a), "wav": audio.export(a, "wav", 24), "mp3": mp3,
-            "stems": _zip_stems(a, stems) if stems else None}
+            "stems": _zip_stems(a, stems) if stems else None, "layout": layout}
 
 
 def push(item: dict) -> dict:
@@ -53,9 +53,27 @@ def push(item: dict) -> dict:
     return item
 
 
-def add(name: str, a: np.ndarray, stems: dict | None = None) -> dict:
-    return push(make_item(name, a, stems))
+def add(name: str, a: np.ndarray, stems: dict | None = None, layout=None) -> dict:
+    return push(make_item(name, a, stems, layout))
 
 
 def remove(item_id: str) -> None:
     st.session_state[KEY] = [i for i in items() if i["id"] != item_id]
+
+
+# ---- clips de voix enregistrées (Labo voix -> Studio) ----
+def clips() -> list[dict]:
+    return st.session_state.setdefault(CLIPS, [])
+
+
+def add_clip(name: str, a: np.ndarray) -> dict:
+    clip = {"id": uuid.uuid4().hex[:8], "name": name.strip() or "clip", "audio": a.astype(np.float32),
+            "seconds": audio.duration(a)}
+    lst = clips()
+    lst.insert(0, clip)
+    del lst[MAX_CLIPS:]
+    return clip
+
+
+def get_clip(clip_id: str) -> dict | None:
+    return next((c for c in clips() if c["id"] == clip_id), None)
