@@ -4,40 +4,48 @@ APP_NAME = "Oxygène Jingle"
 APP_ICON = "🫧"
 TAGLINE = "Studio de jingles & voix off pour DJs"
 
-# Libellé affiché -> identifiant de voix neurale (edge-tts, gratuit, sans clé API)
-VOICES = {
-    "🇫🇷 Henri — homme, chaleureux": "fr-FR-HenriNeural",
-    "🇫🇷 Denise — femme, claire": "fr-FR-DeniseNeural",
-    "🇫🇷 Rémy — homme, multilingue": "fr-FR-RemyMultilingualNeural",
-    "🇫🇷 Vivienne — femme, multilingue": "fr-FR-VivienneMultilingualNeural",
-    "🇫🇷 Éloïse — jeune": "fr-FR-EloiseNeural",
-    "🇧🇪 Gérard — homme": "fr-BE-GerardNeural",
-    "🇧🇪 Charline — femme": "fr-BE-CharlineNeural",
-    "🇨🇦 Antoine — homme": "fr-CA-AntoineNeural",
-    "🇨🇦 Sylvie — femme": "fr-CA-SylvieNeural",
-    "🇨🇭 Fabrice — homme": "fr-CH-FabriceNeural",
-    "🇨🇭 Ariane — femme": "fr-CH-ArianeNeural",
-    "🇺🇸 Guy — voix annonceur": "en-US-GuyNeural",
-    "🇺🇸 Christopher — grave": "en-US-ChristopherNeural",
-    "🇺🇸 Aria — femme": "en-US-AriaNeural",
-    "🇺🇸 Andrew — multilingue": "en-US-AndrewMultilingualNeural",
-    "🇺🇸 Ava — multilingue": "en-US-AvaMultilingualNeural",
-    "🇬🇧 Ryan — homme": "en-GB-RyanNeural",
-    "🇬🇧 Sonia — femme": "en-GB-SoniaNeural",
-    "🇪🇸 Álvaro — homme": "es-ES-AlvaroNeural",
-    "🇪🇸 Elvira — femme": "es-ES-ElviraNeural",
-    "🇮🇹 Diego — homme": "it-IT-DiegoNeural",
-    "🇮🇹 Elsa — femme": "it-IT-ElsaNeural",
-    "🇩🇪 Conrad — homme": "de-DE-ConradNeural",
-    "🇩🇪 Katja — femme": "de-DE-KatjaNeural",
-    "🇧🇷 Antônio — homme": "pt-BR-AntonioNeural",
-    "🇧🇷 Francisca — femme": "pt-BR-FranciscaNeural",
-}
+# (libellé affiché, identifiant edge-tts, genre H/F)
+VOICE_INFO = [
+    ("🇫🇷 Henri — homme, chaleureux", "fr-FR-HenriNeural", "H"),
+    ("🇫🇷 Denise — femme, claire", "fr-FR-DeniseNeural", "F"),
+    ("🇫🇷 Rémy — homme, multilingue", "fr-FR-RemyMultilingualNeural", "H"),
+    ("🇫🇷 Vivienne — femme, multilingue", "fr-FR-VivienneMultilingualNeural", "F"),
+    ("🇫🇷 Éloïse — jeune", "fr-FR-EloiseNeural", "F"),
+    ("🇧🇪 Gérard — homme", "fr-BE-GerardNeural", "H"),
+    ("🇧🇪 Charline — femme", "fr-BE-CharlineNeural", "F"),
+    ("🇨🇦 Antoine — homme", "fr-CA-AntoineNeural", "H"),
+    ("🇨🇦 Jean — homme", "fr-CA-JeanNeural", "H"),
+    ("🇨🇦 Thierry — homme", "fr-CA-ThierryNeural", "H"),
+    ("🇨🇦 Sylvie — femme", "fr-CA-SylvieNeural", "F"),
+    ("🇨🇭 Fabrice — homme", "fr-CH-FabriceNeural", "H"),
+    ("🇨🇭 Ariane — femme", "fr-CH-ArianeNeural", "F"),
+    ("🇺🇸 Guy — voix annonceur", "en-US-GuyNeural", "H"),
+    ("🇺🇸 Christopher — grave", "en-US-ChristopherNeural", "H"),
+    ("🇺🇸 Davis — posé", "en-US-DavisNeural", "H"),
+    ("🇺🇸 Jason — énergique", "en-US-JasonNeural", "H"),
+    ("🇺🇸 Tony — dynamique", "en-US-TonyNeural", "H"),
+    ("🇺🇸 Eric — net", "en-US-EricNeural", "H"),
+    ("🇺🇸 Roger — mûr", "en-US-RogerNeural", "H"),
+    ("🇺🇸 Andrew — multilingue", "en-US-AndrewMultilingualNeural", "H"),
+    ("🇺🇸 Brian — multilingue", "en-US-BrianMultilingualNeural", "H"),
+    ("🇺🇸 Aria — femme", "en-US-AriaNeural", "F"),
+    ("🇺🇸 Jenny — femme", "en-US-JennyNeural", "F"),
+    ("🇺🇸 Ava — multilingue", "en-US-AvaMultilingualNeural", "F"),
+    ("🇺🇸 Emma — multilingue", "en-US-EmmaMultilingualNeural", "F"),
+    ("🇬🇧 Ryan — homme", "en-GB-RyanNeural", "H"),
+    ("🇬🇧 Thomas — homme", "en-GB-ThomasNeural", "H"),
+    ("🇬🇧 Sonia — femme", "en-GB-SoniaNeural", "F"),
+    ("🇪🇸 Álvaro — homme", "es-ES-AlvaroNeural", "H"),
+    ("🇪🇸 Elvira — femme", "es-ES-ElviraNeural", "F"),
+    ("🇮🇹 Diego — homme", "it-IT-DiegoNeural", "H"),
+    ("🇮🇹 Elsa — femme", "it-IT-ElsaNeural", "F"),
+    ("🇩🇪 Conrad — homme", "de-DE-ConradNeural", "H"),
+    ("🇩🇪 Katja — femme", "de-DE-KatjaNeural", "F"),
+    ("🇧🇷 Antônio — homme", "pt-BR-AntonioNeural", "H"),
+    ("🇧🇷 Francisca — femme", "pt-BR-FranciscaNeural", "F"),
+]
 
-# Cibles de loudness pour le mastering final
-TARGETS = {
-    "Radio / web (−16 LUFS)": -16.0,
-    "Streaming / club (−14 LUFS)": -14.0,
-    "Punchy DJ (−11 LUFS)": -11.0,
-    "Broadcast EBU R128 (−23 LUFS)": -23.0,
-}
+VOICES = {label: vid for label, vid, _ in VOICE_INFO}                    # libellé -> identifiant
+VOICE_LABELS = {vid: label for label, vid, _ in VOICE_INFO}              # identifiant -> libellé
+VOICE_META = {label: {"id": vid, "lang": vid.split("-")[0], "gender": g} for label, vid, g in VOICE_INFO}
+LANGS = {"fr": "Français", "en": "Anglais", "es": "Espagnol", "it": "Italien", "de": "Allemand", "pt": "Portugais"}
