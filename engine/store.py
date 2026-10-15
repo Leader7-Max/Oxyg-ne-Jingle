@@ -1,6 +1,7 @@
 """Bibliothèque de session : créations, statistiques de loudness, export des stems."""
 from __future__ import annotations
 
+import hashlib
 import io
 import re
 import time
@@ -61,19 +62,51 @@ def remove(item_id: str) -> None:
     st.session_state[KEY] = [i for i in items() if i["id"] != item_id]
 
 
-# ---- clips de voix enregistrées (Labo voix -> Studio) ----
+# ---- médiathèque : voix, effets et musiques importés ----
+MEDIA = "media"
+LIMITS = {"voix": 10, "effet": 16, "musique": 3}
+MAX_MUSIC_S = 300.0
+
+
+def media(kind: str | None = None) -> list[dict]:
+    lst = st.session_state.setdefault(MEDIA, [])
+    return [m for m in lst if kind in (None, m["kind"])]
+
+
+def add_media(kind: str, name: str, a: np.ndarray, sig=None) -> dict:
+    a = a.astype(np.float32)
+    if kind == "musique" and audio.duration(a) > MAX_MUSIC_S:
+        a = a[:, : int(MAX_MUSIC_S * audio.SR)]
+    m = {"id": uuid.uuid4().hex[:8], "kind": kind, "name": (name or kind).strip()[:40] or kind,
+         "audio": a, "seconds": audio.duration(a), "sig": sig}
+    lst = st.session_state.setdefault(MEDIA, [])
+    lst.insert(0, m)
+    same = [x for x in lst if x["kind"] == kind]
+    for old in same[LIMITS.get(kind, 10):]:
+        lst.remove(old)
+    return m
+
+
+def get_media(media_id: str | None) -> dict | None:
+    return next((m for m in media() if m["id"] == media_id), None)
+
+
+def remove_media(media_id: str) -> None:
+    st.session_state[MEDIA] = [m for m in media() if m["id"] != media_id]
+
+
+def has_sig(sig) -> bool:
+    return any(m.get("sig") == sig for m in media())
+
+
+# compatibilité : « clips » = voix de la médiathèque
 def clips() -> list[dict]:
-    return st.session_state.setdefault(CLIPS, [])
+    return media("voix")
 
 
 def add_clip(name: str, a: np.ndarray) -> dict:
-    clip = {"id": uuid.uuid4().hex[:8], "name": name.strip() or "clip", "audio": a.astype(np.float32),
-            "seconds": audio.duration(a)}
-    lst = clips()
-    lst.insert(0, clip)
-    del lst[MAX_CLIPS:]
-    return clip
+    return add_media("voix", name, a)
 
 
-def get_clip(clip_id: str) -> dict | None:
-    return next((c for c in clips() if c["id"] == clip_id), None)
+def get_clip(clip_id: str | None) -> dict | None:
+    return get_media(clip_id)
