@@ -78,6 +78,9 @@ textarea,input,div[data-baseweb="select"]>div{border-radius:12px !important;}
 .oxy-wave{padding:10px 12px;border-radius:16px;background:var(--glass);border:1px solid var(--line);margin-bottom:10px;}
 .oxy-foot{color:var(--muted);font-size:.76rem;margin-top:26px;line-height:1.5;}
 
+.oxy-tip{display:flex;gap:10px;padding:12px 14px;border-radius:14px;margin:8px 0 12px;font-size:.92rem;
+  background:linear-gradient(135deg,rgba(34,211,238,.10),rgba(124,131,255,.10));border:1px solid var(--line);}
+.oxy-tip b{color:var(--cyan);}
 @media (max-width:640px){
   .block-container{padding:1.2rem .8rem 3rem;}
   .oxy-hero{padding:16px;border-radius:18px;} .oxy-hero h1{font-size:1.45rem;}
