@@ -1,8 +1,8 @@
-"""Synthèse vocale neurale gratuite (edge-tts) + gestion des scripts multi-voix."""
+"""Synthèse vocale neurale gratuite (edge-tts), avec cache, relances et appels en parallèle."""
 from __future__ import annotations
 
 import asyncio
-import re
+import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 
@@ -10,9 +10,6 @@ import edge_tts
 
 from config import VOICES
 from engine import audio
-
-_B_LINE = re.compile(r"^\s*(?:B|2)\s*[:：]\s*(.+)$", re.IGNORECASE)
-_PAUSE = re.compile(r"^\s*\[pause\s*([\d.,]+)\s*s?\]\s*$", re.IGNORECASE)
 
 
 async def _fetch(text: str, voice: str, rate: str, pitch: str, volume: str) -> bytes:
@@ -24,15 +21,21 @@ async def _fetch(text: str, voice: str, rate: str, pitch: str, volume: str) -> b
     return bytes(buf)
 
 
-@lru_cache(maxsize=64)
+@lru_cache(maxsize=256)
 def _synth_bytes(text: str, voice: str, rate: int, pitch: int, volume: int) -> bytes:
     args = (text, voice, f"{rate:+d}%", f"{pitch:+d}Hz", f"{volume:+d}%")
-    # thread dédié : évite tout conflit avec la boucle d'événements de Streamlit
-    with ThreadPoolExecutor(max_workers=1) as ex:
-        data = ex.submit(lambda: asyncio.run(_fetch(*args))).result()
-    if not data:
-        raise RuntimeError("Aucun audio reçu (connexion internet requise).")
-    return data
+    last: Exception | None = None
+    for attempt in range(3):                       # le service gratuit refuse parfois un appel : on réessaie
+        try:
+            with ThreadPoolExecutor(max_workers=1) as ex:
+                data = ex.submit(lambda: asyncio.run(_fetch(*args))).result()
+            if data:
+                return data
+            last = RuntimeError("Aucun audio reçu (connexion internet requise).")
+        except Exception as e:  # noqa: BLE001
+            last = e
+        time.sleep(0.6 * (attempt + 1))
+    raise RuntimeError(f"Synthèse vocale impossible : {last}")
 
 
 def synthesize(text: str, voice_label: str, rate: int = 0, pitch: int = 0, volume: int = 0):
@@ -40,29 +43,7 @@ def synthesize(text: str, voice_label: str, rate: int = 0, pitch: int = 0, volum
     return audio.decode(_synth_bytes(text.strip(), voice, int(rate), int(pitch), int(volume)))
 
 
-def parse_script(script: str):
-    """Lignes -> [('pause', s) | ('line', ('A'|'B', texte))]."""
-    out = []
-    for raw in script.splitlines():
-        if not raw.strip():
-            continue
-        if m := _PAUSE.match(raw):
-            out.append(("pause", float(m.group(1).replace(",", "."))))
-        elif m := _B_LINE.match(raw):
-            out.append(("line", ("B", m.group(1).strip())))
-        else:
-            out.append(("line", ("A", raw.strip())))
-    return out
-
-
-def render_script(script: str, voice_a: str, voice_b: str, rate=0, pitch=0, volume=0,
-                  gap_s: float = 0.25):
-    parts = []
-    for kind, val in parse_script(script):
-        if kind == "pause":
-            parts.append(audio.silence(val))
-        else:
-            who, line = val
-            parts.append(synthesize(line, voice_b if who == "B" else voice_a, rate, pitch, volume))
-            parts.append(audio.silence(gap_s))
-    return audio.concat(parts)
+def synthesize_many(jobs, workers: int = 4):
+    """jobs : [(texte, voix, vitesse, hauteur, volume)] -> liste d'audios (même ordre)."""
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        return list(ex.map(lambda j: synthesize(*j), jobs))
